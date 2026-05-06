@@ -1,0 +1,24 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Coolify deployment
+        env:
+          COOLIFY_SECRET: ${{ secrets.COOLIFY_WEBHOOK_TOKEN }}
+        run: |
+          PAYLOAD="{\"ref\":\"refs/heads/main\",\"after\":\"${GITHUB_SHA}\",\"repository\":{\"full_name\":\"${GITHUB_REPOSITORY}\"},\"commits\":[]}"
+          SIG="sha256=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$COOLIFY_SECRET" | awk '{print $2}')"
+          curl --fail --show-error -X POST \
+            "http://coolify.edwardstechnology.be/webhooks/source/github/events/manual" \
+            -H "Content-Type: application/json" \
+            -H "X-GitHub-Event: push" \
+            -H "X-GitHub-Delivery: ${{ github.run_id }}" \
+            -H "X-Hub-Signature-256: $SIG" \
+            -d "$PAYLOAD"
