@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 S3Region = Literal["fsn1", "hel1", "nbg1"]
 
@@ -21,7 +21,7 @@ class Settings(BaseSettings):
 
     telegram_bot_token: str
     telegram_webhook_secret: str
-    telegram_allowed_user_ids: list[int] = []
+    telegram_allowed_user_ids: Annotated[list[int], NoDecode] = []
     anthropic_api_key: str
 
     database_url: str
@@ -48,6 +48,8 @@ class Settings(BaseSettings):
     def _parse_user_ids(cls, v: object) -> object:
         if v is None or v == "":
             return []
+        if isinstance(v, int):
+            return [v]
         if isinstance(v, str):
             return [int(s.strip()) for s in v.split(",") if s.strip()]
         return v
