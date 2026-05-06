@@ -8,7 +8,7 @@ from typing import AsyncIterator
 
 import structlog
 from fastapi import FastAPI, Header, HTTPException, Request, Response
-from telegram import Update
+from telegram import MenuButtonCommands, Update
 from telegram.ext import Application, ApplicationBuilder
 
 from app.bot.handlers import register_handlers
@@ -41,6 +41,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await tg_app.bot.set_my_commands(COMMANDS)
     except Exception as exc:  # noqa: BLE001
         log.warning("set_my_commands_failed", error=str(exc))
+    try:
+        await tg_app.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+    except Exception as exc:  # noqa: BLE001
+        log.warning("set_chat_menu_button_failed", error=str(exc))
     try:
         await tg_app.bot.set_webhook(
             url=f"{settings.public_base_url.rstrip('/')}/tg",
