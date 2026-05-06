@@ -271,9 +271,8 @@ async def _build_and_deliver(trip_id: int, bot: Bot) -> None:
 
         deliverables = [xlsx_path, pdf_path, zip_path]
         report_keys: dict[str, str] = {}
-        prefix = f"{user_id}/{trip_id}"
         for path in deliverables:
-            key = f"{prefix}/{path.name}"
+            key = s3mod.report_key(user_id, trip_id, path.name)
             await s3mod.upload_file(
                 settings.s3_bucket_reports,
                 key,
@@ -298,7 +297,7 @@ async def _build_and_deliver(trip_id: int, bot: Bot) -> None:
             else:
                 combined = tmp_path / f"{safe}-bundle.zip"
                 bundle_all(deliverables, combined)
-                key = f"{prefix}/{combined.name}"
+                key = s3mod.report_key(user_id, trip_id, combined.name)
                 await s3mod.upload_file(
                     settings.s3_bucket_reports,
                     key,

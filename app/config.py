@@ -5,7 +5,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 S3Region = Literal["fsn1", "hel1", "nbg1"]
@@ -21,6 +21,7 @@ class Settings(BaseSettings):
 
     telegram_bot_token: str
     telegram_webhook_secret: str
+    telegram_allowed_user_ids: list[int] = []
     anthropic_api_key: str
 
     database_url: str
@@ -32,6 +33,8 @@ class Settings(BaseSettings):
     s3_secret_key: str
     s3_bucket_receipts: str = "receipts-raw"
     s3_bucket_reports: str = "reports"
+    s3_prefix_receipts: str = "receipts"
+    s3_prefix_reports: str = "reports"
 
     anthropic_model: str = "claude-sonnet-4-5"
     batch_poll_interval_seconds: int = 60
@@ -39,6 +42,22 @@ class Settings(BaseSettings):
 
     log_level: str = "INFO"
     bundle_size_limit_mb: int = 45
+
+    @field_validator("telegram_allowed_user_ids", mode="before")
+    @classmethod
+    def _parse_user_ids(cls, v: object) -> object:
+        if v is None or v == "":
+            return []
+        if isinstance(v, str):
+            return [int(s.strip()) for s in v.split(",") if s.strip()]
+        return v
+
+    @field_validator("s3_prefix_receipts", "s3_prefix_reports", mode="before")
+    @classmethod
+    def _strip_slashes(cls, v: object) -> object:
+        if isinstance(v, str):
+            return v.strip().strip("/")
+        return v
 
 
 @lru_cache(maxsize=1)
