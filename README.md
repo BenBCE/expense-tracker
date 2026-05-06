@@ -20,7 +20,7 @@ report, a combined PDF and a zip of the raw images.
 | send a photo / image doc | Upload a receipt to the active trip. Replies with `📸 receipt #N saved`. |
 | `/note <text>` | Attach a note to the most recent receipt. |
 | `/list` | Count + last 5 receipts of the active trip. |
-| `/cancel <n>` | Soft-delete receipt `#n`. |
+| `/cancel <n>` | Soft-delete receipt `#n` (also removes the file from the bucket). |
 | `/end_trip` | Close the trip, kick the batch job, eventually receive xlsx + pdf + zip. |
 
 `/end_trip` is idempotent: if the trip is already processing or done it re-sends
@@ -56,9 +56,17 @@ docker-compose.yml
    in the location you prefer. The endpoint follows the pattern
    `https://<location>.your-objectstorage.com` where `<location>` is one of
    `fsn1`, `hel1`, `nbg1`.
-2. Create **two private buckets** (both ACL = private):
-   - `receipts-raw` — raw uploads, key layout `{user_id}/{trip_id}/{receipt_id}.jpg`
-   - `reports` — generated `.xlsx` / `.pdf` / `.zip`
+2. Create either **one** or **two** private buckets (ACL = private):
+   - One bucket — set `S3_BUCKET_RECEIPTS` and `S3_BUCKET_REPORTS` to the same
+     name. Receipts and reports are separated by the configurable prefixes
+     `S3_PREFIX_RECEIPTS` (default `receipts`) and `S3_PREFIX_REPORTS`
+     (default `reports`).
+   - Two buckets — for example `receipts-raw` and `reports`, with empty
+     prefixes if you don't want a nested folder.
+
+   The default key layout is:
+   - `<S3_PREFIX_RECEIPTS>/{user_id}/{trip_id}/{receipt_id}.jpg`
+   - `<S3_PREFIX_REPORTS>/{user_id}/{trip_id}/{filename}.{xlsx,pdf,zip}`
 3. Create an **S3 access key** under the same project. Note the key id and
    secret. Put them into `S3_ACCESS_KEY` / `S3_SECRET_KEY`.
 4. Set `S3_REGION` to match the location (e.g. `fsn1`) and `S3_ENDPOINT_URL`
@@ -78,6 +86,10 @@ virtual-hosted plays nicer with strict S3 clients).
 3. The app registers the webhook automatically at startup at
    `${PUBLIC_BASE_URL}/tg`. Make sure `PUBLIC_BASE_URL` is reachable over HTTPS
    (Coolify or a reverse proxy in front of the container).
+4. (Recommended) Lock the bot down to your own Telegram user id by setting
+   `TELEGRAM_ALLOWED_USER_IDS` to a comma-separated list of numeric ids
+   (e.g. `12345678` or `12345678,87654321`). Any messages from other users
+   are silently ignored. To find your id, message [@userinfobot](https://t.me/userinfobot).
 
 ## 3 — Run locally with docker compose
 

@@ -35,8 +35,18 @@ async def s3_client(addressing_style: str = "path") -> AsyncIterator[Any]:
         yield client
 
 
+def _join_key(*parts: str) -> str:
+    return "/".join(p.strip("/") for p in parts if p)
+
+
 def receipt_key(user_id: int, trip_id: int, receipt_id: int) -> str:
-    return f"{user_id}/{trip_id}/{receipt_id}.jpg"
+    settings = get_settings()
+    return _join_key(settings.s3_prefix_receipts, str(user_id), str(trip_id), f"{receipt_id}.jpg")
+
+
+def report_key(user_id: int, trip_id: int, filename: str) -> str:
+    settings = get_settings()
+    return _join_key(settings.s3_prefix_reports, str(user_id), str(trip_id), filename)
 
 
 async def upload_bytes(
@@ -69,6 +79,11 @@ async def download_bytes(bucket: str, key: str) -> bytes:
         resp = await client.get_object(Bucket=bucket, Key=key)
         async with resp["Body"] as stream:
             return await stream.read()
+
+
+async def delete_object(bucket: str, key: str) -> None:
+    async with s3_client("path") as client:
+        await client.delete_object(Bucket=bucket, Key=key)
 
 
 async def presign_url(bucket: str, key: str, expires_in: int) -> str:

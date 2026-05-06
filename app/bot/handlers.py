@@ -27,6 +27,14 @@ from app.storage import s3 as s3mod
 log = get_logger(__name__)
 
 
+def _user_filter() -> filters.BaseFilter | None:
+    """Return a filter that restricts handlers to the configured allowlist, or None."""
+    allowed = get_settings().telegram_allowed_user_ids
+    if not allowed:
+        return None
+    return filters.User(user_id=allowed)
+
+
 async def _active_trip(session: AsyncSession, user_id: int) -> Trip | None:
     res = await session.execute(
         select(Trip).where(Trip.user_id == user_id, Trip.status == "active")
@@ -220,6 +228,7 @@ async def cmd_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         await msg.reply_text("Receipt number must be an integer.")
         return
 
+    settings = get_settings()
     async with session_scope() as session:
         trip = await _active_trip(session, user.id)
         if not trip:
@@ -237,6 +246,18 @@ async def cmd_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
             await msg.reply_text(f"No active receipt #{seq}.")
             return
         receipt.deleted_at = datetime.now(timezone.utc)
+        s3_key = receipt.s3_key
+        receipt_id = receipt.id
+
+    try:
+        await s3mod.delete_object(settings.s3_bucket_receipts, s3_key)
+    except Exception as exc:  # noqa: BLE001
+        log.warning(
+            "receipt_s3_delete_failed",
+            receipt_id=receipt_id,
+            s3_key=s3_key,
+            error=str(exc),
+        )
 
     await msg.reply_text(f"🗑 receipt #{seq} cancelled")
 
@@ -278,13 +299,27 @@ async def cmd_end_trip(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 
 def register_handlers(app: Application) -> None:
-    app.add_handler(CommandHandler("start", cmd_start))
-    app.add_handler(CommandHandler("start_trip", cmd_start_trip))
-    app.add_handler(CommandHandler("note", cmd_note))
-    app.add_handler(CommandHandler("list", cmd_list))
-    app.add_handler(CommandHandler("cancel", cmd_cancel))
-    app.add_handler(CommandHandler("end_trip", cmd_end_trip))
-    app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
-    app.add_handler(
-        MessageHandler(filters.Document.IMAGE | filters.Document.MimeType("image/jpeg"), handle_photo)
-    )
+    user_filter = _user_filter()
+    if user_filter is not None:
+        log.info(
+            "telegram_allowlist_enabled",
+            allowed=get_settings().telegram_allowed_user_ids,
+        )
+
+    def _cmd(name: str, callback) -> CommandHandler:  # type: ignore[no-untyped-def]
+        return CommandHandler(name, callback, filters=user_filter)
+
+    app.add_handler(_cmd("start", cmd_start))
+    app.add_handler(_cmd("start_trip", cmd_start_trip))
+    app.add_handler(_cmd("note", cmd_note))
+    app.add_handler(_cmd("list", cmd_list))
+    app.add_handler(_cmd("cancel", cmd_cancel))
+    app.add_handler(_cmd("end_trip", cmd_end_trip))
+
+    photo_filter: filters.BaseFilter = filters.PHOTO
+    doc_filter: filters.BaseFilter = filters.Document.IMAGE
+    if user_filter is not None:
+        photo_filter = photo_filter & user_filter
+        doc_filter = doc_filter & user_filter
+    app.add_handler(MessageHandler(photo_filter, handle_photo))
+    app.add_handler(MessageHandler(doc_filter, handle_photo))
