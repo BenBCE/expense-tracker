@@ -104,6 +104,11 @@ async def _request_id_mw(request: Request, call_next):  # type: ignore[no-untype
     return response
 
 
+@app.get("/")
+async def root() -> Response:
+    return RedirectResponse(url="/portal/", status_code=307)
+
+
 @app.get("/healthz")
 async def healthz() -> dict[str, str]:
     return {"status": "ok"}
