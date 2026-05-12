@@ -623,6 +623,25 @@ async def receipt_image(
     return RedirectResponse(url=url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 
 
+@router.get("/trips/{trip_id}/reports/{filename}")
+async def trip_report_file(
+    trip_id: int, filename: str, user: CurrentUser
+) -> Response:
+    settings = get_settings()
+    async with session_scope() as session:
+        trip = await session.get(Trip, trip_id)
+        if not trip or trip.user_id != user.id:
+            raise HTTPException(status_code=404, detail="trip not found")
+        keys = trip.report_keys or {}
+        key = keys.get(filename)
+    if not key:
+        raise HTTPException(status_code=404, detail="report not found")
+    url = await s3mod.presign_url(
+        settings.s3_bucket_reports, key, settings.presign_ttl_seconds
+    )
+    return RedirectResponse(url=url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
+
+
 @router.get("/expenses", response_class=HTMLResponse)
 async def expenses_index(
     request: Request,
