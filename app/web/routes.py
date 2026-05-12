@@ -55,9 +55,9 @@ async def login_page(request: Request) -> Response:
     settings = get_settings()
     bot_username = settings.portal_telegram_bot_username or ""
     return templates.TemplateResponse(
+        request,
         "login.html",
         {
-            "request": request,
             "bot_username": bot_username,
             "public_base_url": settings.public_base_url.rstrip("/"),
         },
@@ -109,9 +109,9 @@ async def dashboard(request: Request, user: CurrentUser) -> Response:
         totals_by_trip = {row.id: (row.receipts, row.total) for row in totals_res.all()}
 
     return templates.TemplateResponse(
+        request,
         "dashboard.html",
         {
-            "request": request,
             "user": user,
             "trips": trips,
             "totals_by_trip": totals_by_trip,
@@ -171,9 +171,9 @@ async def trip_detail(
                 str(e.total)
             )
     return templates.TemplateResponse(
+        request,
         "trip_detail.html",
         {
-            "request": request,
             "user": user,
             "trip": trip,
             "receipts": active_receipts,
@@ -547,8 +547,9 @@ async def expense_row_editor(
     if not receipt:
         raise HTTPException(status_code=404, detail="not found")
     return templates.TemplateResponse(
+        request,
         "_expense_row_edit.html",
-        {"request": request, "receipt": receipt, "categories": ALLOWED_CATEGORIES},
+        {"receipt": receipt, "categories": ALLOWED_CATEGORIES},
     )
 
 
@@ -564,8 +565,9 @@ async def _row_partial(receipt_id: int, user_id: int, request: Request) -> Respo
     if not receipt:
         raise HTTPException(status_code=404, detail="not found")
     return templates.TemplateResponse(
+        request,
         "_expense_row.html",
-        {"request": request, "receipt": receipt},
+        {"receipt": receipt},
     )
 
 
@@ -662,9 +664,9 @@ async def expenses_index(
             )
 
     return templates.TemplateResponse(
+        request,
         "expenses.html",
         {
-            "request": request,
             "user": user,
             "rows": rows,
             "totals": totals,
