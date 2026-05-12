@@ -1,0 +1,50 @@
+<tr id="row-{{ receipt.id }}" class="border-t border-slate-100 bg-amber-50">
+  <form hx-post="/portal/expenses/{{ receipt.id }}/edit"
+        hx-target="#row-{{ receipt.id }}"
+        hx-swap="outerHTML"
+        class="contents">
+    <td class="px-3 py-2 align-top">{{ receipt.seq }}</td>
+    <td class="px-2 py-2 align-top">
+      <input type="date" name="date" value="{{ receipt.expense.date if receipt.expense and receipt.expense.date else '' }}"
+             class="w-32 rounded border border-slate-300 px-2 py-1 text-xs" />
+    </td>
+    <td class="px-2 py-2 align-top">
+      <input type="text" name="vendor" value="{{ receipt.expense.vendor if receipt.expense else '' }}"
+             class="w-full rounded border border-slate-300 px-2 py-1 text-xs" />
+    </td>
+    <td class="px-2 py-2 align-top">
+      <select name="category" class="rounded border border-slate-300 px-2 py-1 text-xs">
+        <option value="">—</option>
+        {% for c in ["meals", "lodging", "transport", "fuel", "office", "other"] %}
+          <option value="{{ c }}" {% if receipt.expense and receipt.expense.category == c %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+    </td>
+    <td class="px-2 py-2 align-top">
+      <input type="text" name="total" value="{{ receipt.expense.total if receipt.expense and receipt.expense.total is not none else '' }}"
+             class="w-24 rounded border border-slate-300 px-2 py-1 text-xs text-right" />
+      <div class="mt-1">
+        <input type="text" name="subtotal" placeholder="sub" value="{{ receipt.expense.subtotal if receipt.expense and receipt.expense.subtotal is not none else '' }}" class="w-24 rounded border border-slate-300 px-2 py-1 text-xs text-right" />
+      </div>
+      <div class="mt-1">
+        <input type="text" name="vat" placeholder="vat" value="{{ receipt.expense.vat if receipt.expense and receipt.expense.vat is not none else '' }}" class="w-24 rounded border border-slate-300 px-2 py-1 text-xs text-right" />
+      </div>
+    </td>
+    <td class="px-2 py-2 align-top">
+      <input type="text" name="currency" maxlength="3" value="{{ receipt.expense.currency if receipt.expense and receipt.expense.currency else '' }}"
+             class="w-16 rounded border border-slate-300 px-2 py-1 text-xs uppercase" />
+    </td>
+    <td class="px-2 py-2 align-top">
+      <input type="text" name="note" value="{{ receipt.note or '' }}"
+             class="w-full rounded border border-slate-300 px-2 py-1 text-xs" />
+    </td>
+    <td class="px-2 py-2 align-top text-xs text-slate-500">{{ receipt.source }}</td>
+    <td class="px-3 py-2 align-top text-right whitespace-nowrap">
+      <button type="submit" class="text-emerald-700 hover:underline text-xs">Save</button>
+      <button type="button" class="text-slate-500 hover:underline text-xs ml-2"
+              hx-get="/portal/expenses/{{ receipt.id }}/row"
+              hx-target="#row-{{ receipt.id }}"
+              hx-swap="outerHTML">Cancel</button>
+    </td>
+  </form>
+</tr>

@@ -8,6 +8,8 @@ from typing import AsyncIterator
 
 import structlog
 from fastapi import FastAPI, Header, HTTPException, Request, Response
+from fastapi.responses import RedirectResponse
+from starlette.middleware.sessions import SessionMiddleware
 from telegram import MenuButtonCommands, Update
 from telegram.ext import Application, ApplicationBuilder
 
@@ -17,6 +19,8 @@ from app.config import get_settings
 from app.db.session import dispose_engine
 from app.logging_setup import configure_logging, get_logger
 from app.scheduler import build_scheduler
+from app.web.auth import RedirectToLoginError
+from app.web.routes import router as portal_router
 
 
 log = get_logger(__name__)
@@ -72,6 +76,22 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="expense-tracker", lifespan=lifespan)
+
+_settings = get_settings()
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=_settings.session_secret,
+    max_age=_settings.session_max_age_seconds,
+    same_site="lax",
+    https_only=False,
+    session_cookie="portal_session",
+)
+app.include_router(portal_router, prefix="/portal")
+
+
+@app.exception_handler(RedirectToLoginError)
+async def _redirect_to_login(_: Request, __: RedirectToLoginError) -> Response:
+    return RedirectResponse(url="/portal/login", status_code=303)
 
 
 @app.middleware("http")

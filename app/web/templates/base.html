@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Expense portal{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <style>
+    [x-cloak] { display: none !important; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+  {% if user %}
+  <nav class="bg-white border-b border-slate-200">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-6">
+        <a href="/portal/" class="font-semibold text-slate-900">Expense portal</a>
+        <a href="/portal/" class="text-sm text-slate-600 hover:text-slate-900">Trips</a>
+        <a href="/portal/expenses" class="text-sm text-slate-600 hover:text-slate-900">All expenses</a>
+      </div>
+      <div class="flex items-center gap-3 text-sm">
+        {% if user.photo_url %}
+          <img src="{{ user.photo_url }}" class="w-7 h-7 rounded-full" alt="" />
+        {% endif %}
+        <span class="text-slate-700">{{ user.first_name or user.username or user.id }}</span>
+        <form method="post" action="/portal/logout">
+          <button class="text-slate-500 hover:text-rose-600">Log out</button>
+        </form>
+      </div>
+    </div>
+  </nav>
+  {% endif %}
+
+  <main class="max-w-6xl mx-auto px-4 py-6">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

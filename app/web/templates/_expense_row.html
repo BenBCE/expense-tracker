@@ -1,0 +1,34 @@
+<tr id="row-{{ receipt.id }}" class="border-t border-slate-100">
+  <td class="px-3 py-2">{{ receipt.seq }}</td>
+  <td class="px-3 py-2">{{ receipt.expense.date if receipt.expense and receipt.expense.date else "—" }}</td>
+  <td class="px-3 py-2">{{ receipt.expense.vendor if receipt.expense and receipt.expense.vendor else "—" }}</td>
+  <td class="px-3 py-2">{{ receipt.expense.category if receipt.expense and receipt.expense.category else "—" }}</td>
+  <td class="px-3 py-2 text-right">
+    {% if receipt.expense and receipt.expense.total is not none %}
+      {{ "%.2f"|format(receipt.expense.total) }}
+    {% else %}—{% endif %}
+  </td>
+  <td class="px-3 py-2">{{ receipt.expense.currency if receipt.expense and receipt.expense.currency else "—" }}</td>
+  <td class="px-3 py-2 text-slate-600">{{ receipt.note or "" }}</td>
+  <td class="px-3 py-2 text-xs">
+    {% if receipt.s3_key %}
+      <a href="/portal/receipts/{{ receipt.id }}/image" target="_blank" class="text-sky-700 hover:underline">{{ receipt.source }}</a>
+    {% else %}
+      <span class="text-slate-500">{{ receipt.source }}</span>
+    {% endif %}
+    {% if receipt.status and receipt.status != "processed" and receipt.status != "manual" %}
+      <span class="ml-1 text-amber-700">[{{ receipt.status }}]</span>
+    {% endif %}
+  </td>
+  <td class="px-3 py-2 text-right whitespace-nowrap">
+    <button class="text-sky-700 hover:underline text-xs"
+            hx-get="/portal/expenses/{{ receipt.id }}/edit"
+            hx-target="#row-{{ receipt.id }}"
+            hx-swap="outerHTML">Edit</button>
+    <button class="text-rose-600 hover:underline text-xs ml-2"
+            hx-post="/portal/expenses/{{ receipt.id }}/delete"
+            hx-target="#row-{{ receipt.id }}"
+            hx-swap="outerHTML"
+            hx-confirm="Delete this expense?">Delete</button>
+  </td>
+</tr>

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Trips · Expense portal{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-semibold">Trips</h1>
+</div>
+
+<form method="post" action="/portal/trips" class="flex gap-2 mb-6">
+  <input type="text" name="name" required placeholder="New trip name"
+         class="flex-1 rounded border border-slate-300 px-3 py-2 text-sm" />
+  <button class="bg-slate-900 text-white text-sm px-4 py-2 rounded hover:bg-slate-700">Start trip</button>
+</form>
+
+{% if not trips %}
+  <div class="bg-white border border-slate-200 rounded p-8 text-center text-slate-500">
+    No trips yet. Start one above, or send <code>/start_trip &lt;name&gt;</code> to the Telegram bot.
+  </div>
+{% else %}
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    {% for trip in trips %}
+      {% set counts = totals_by_trip.get(trip.id, (0, 0)) %}
+      <a href="/portal/trips/{{ trip.id }}"
+         class="block bg-white border border-slate-200 rounded p-4 hover:border-slate-400 transition">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="font-medium truncate">{{ trip.name }}</h2>
+          <span class="text-xs px-2 py-0.5 rounded
+            {% if trip.status == 'active' %}bg-emerald-100 text-emerald-800
+            {% elif trip.status == 'processing' %}bg-amber-100 text-amber-800
+            {% elif trip.status == 'done' %}bg-slate-200 text-slate-700
+            {% else %}bg-rose-100 text-rose-700{% endif %}">
+            {{ trip.status }}
+          </span>
+        </div>
+        <div class="text-sm text-slate-600">{{ counts[0] }} receipt(s)</div>
+        <div class="text-sm text-slate-600">Total: {{ "%.2f"|format(counts[1] or 0) }}</div>
+        <div class="text-xs text-slate-400 mt-2">{{ trip.started_at.strftime("%Y-%m-%d") if trip.started_at else "" }}</div>
+      </a>
+    {% endfor %}
+  </div>
+{% endif %}
+{% endblock %}

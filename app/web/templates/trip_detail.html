@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}{{ trip.name }} · Expense portal{% endblock %}
+{% block content %}
+<a href="/portal/" class="text-sm text-slate-500 hover:text-slate-900">&larr; Trips</a>
+
+<div class="flex items-center justify-between mt-2 mb-6">
+  <div>
+    <h1 class="text-2xl font-semibold">{{ trip.name }}</h1>
+    <div class="text-sm text-slate-500">
+      Trip #{{ trip.id }} ·
+      <span class="px-2 py-0.5 rounded text-xs
+        {% if trip.status == 'active' %}bg-emerald-100 text-emerald-800
+        {% elif trip.status == 'processing' %}bg-amber-100 text-amber-800
+        {% elif trip.status == 'done' %}bg-slate-200 text-slate-700
+        {% else %}bg-rose-100 text-rose-700{% endif %}">{{ trip.status }}</span>
+    </div>
+  </div>
+  {% if trip.status == "active" %}
+    <form method="post" action="/portal/trips/{{ trip.id }}/end">
+      <button class="bg-slate-900 text-white text-sm px-4 py-2 rounded hover:bg-slate-700">End trip &amp; build report</button>
+    </form>
+  {% endif %}
+</div>
+
+{% if totals %}
+  <div class="bg-white border border-slate-200 rounded p-4 mb-6 flex flex-wrap gap-x-8 gap-y-2">
+    {% for ccy, amount in totals.items() %}
+      <div>
+        <div class="text-xs uppercase text-slate-500">Total {{ ccy }}</div>
+        <div class="text-lg font-medium">{{ "%.2f"|format(amount) }}</div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<div class="grid lg:grid-cols-2 gap-6 mb-6">
+  <div class="bg-white border border-slate-200 rounded p-4">
+    <h3 class="font-medium mb-3">Upload receipt</h3>
+    <form method="post" action="/portal/trips/{{ trip.id }}/upload" enctype="multipart/form-data" class="space-y-2">
+      <input type="file" name="file" accept="image/*" required
+             class="block w-full text-sm" />
+      <input type="text" name="note" placeholder="Optional note"
+             class="block w-full rounded border border-slate-300 px-3 py-2 text-sm" />
+      <button class="bg-slate-900 text-white text-sm px-4 py-2 rounded hover:bg-slate-700">Upload &amp; extract</button>
+    </form>
+  </div>
+
+  <div class="bg-white border border-slate-200 rounded p-4">
+    <h3 class="font-medium mb-3">Add manual expense</h3>
+    <form method="post" action="/portal/trips/{{ trip.id }}/expenses" class="grid grid-cols-2 gap-2 text-sm">
+      <input type="text" name="vendor" placeholder="Vendor" class="rounded border border-slate-300 px-2 py-1 col-span-2" />
+      <input type="date" name="date" class="rounded border border-slate-300 px-2 py-1" />
+      <select name="category" class="rounded border border-slate-300 px-2 py-1">
+        <option value="">category…</option>
+        {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+      </select>
+      <input type="text" name="total" placeholder="Total" class="rounded border border-slate-300 px-2 py-1" />
+      <input type="text" name="currency" placeholder="EUR" maxlength="3" class="rounded border border-slate-300 px-2 py-1 uppercase" />
+      <input type="text" name="subtotal" placeholder="Subtotal (opt.)" class="rounded border border-slate-300 px-2 py-1" />
+      <input type="text" name="vat" placeholder="VAT (opt.)" class="rounded border border-slate-300 px-2 py-1" />
+      <input type="text" name="note" placeholder="Note (opt.)" class="rounded border border-slate-300 px-2 py-1 col-span-2" />
+      <button class="bg-slate-900 text-white text-sm px-4 py-2 rounded hover:bg-slate-700 col-span-2">Add expense</button>
+    </form>
+  </div>
+</div>
+
+<div class="bg-white border border-slate-200 rounded overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
+      <tr>
+        <th class="px-3 py-2 text-left">#</th>
+        <th class="px-3 py-2 text-left">Date</th>
+        <th class="px-3 py-2 text-left">Vendor</th>
+        <th class="px-3 py-2 text-left">Category</th>
+        <th class="px-3 py-2 text-right">Total</th>
+        <th class="px-3 py-2 text-left">Cur</th>
+        <th class="px-3 py-2 text-left">Note</th>
+        <th class="px-3 py-2 text-left">Source</th>
+        <th class="px-3 py-2"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for receipt in receipts %}
+        {% include "_expense_row.html" %}
+      {% endfor %}
+      {% if not receipts %}
+        <tr><td colspan="9" class="px-3 py-8 text-center text-slate-400">No receipts yet.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
