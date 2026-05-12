@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Log in · Expense portal{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto mt-16 bg-white rounded-lg shadow-sm border border-slate-200 p-8 text-center">
+  <h1 class="text-xl font-semibold mb-2">Expense portal</h1>
+  <p class="text-slate-600 mb-6 text-sm">Sign in with the same Telegram account you use with the bot.</p>
+
+  {% if bot_username %}
+    <div class="flex justify-center">
+      <script async src="https://telegram.org/js/telegram-widget.js?22"
+              data-telegram-login="{{ bot_username }}"
+              data-size="large"
+              data-radius="6"
+              data-auth-url="{{ public_base_url }}/portal/auth/telegram"
+              data-request-access="write"></script>
+    </div>
+  {% else %}
+    <div class="text-left text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded p-3">
+      <p class="font-medium mb-1">Telegram login not configured.</p>
+      <p>Set <code class="font-mono">PORTAL_TELEGRAM_BOT_USERNAME</code> to your bot's <code>@username</code> (without the @) and make sure the bot has a domain bound via <code>@BotFather → /setdomain</code>.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -43,6 +43,11 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     bundle_size_limit_mb: int = 45
 
+    session_secret: str = "change-me-please"
+    session_max_age_seconds: int = 7 * 24 * 3600
+    portal_max_upload_mb: int = 10
+    portal_telegram_bot_username: str = ""
+
     @field_validator("telegram_allowed_user_ids", mode="before")
     @classmethod
     def _parse_user_ids(cls, v: object) -> object:

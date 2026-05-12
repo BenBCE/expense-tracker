@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}All expenses · Expense portal{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-semibold mb-4">All expenses</h1>
+
+<form method="get" action="/portal/expenses" class="bg-white border border-slate-200 rounded p-4 mb-6 grid sm:grid-cols-5 gap-2 text-sm">
+  <label class="flex flex-col">
+    <span class="text-xs text-slate-500 mb-1">From</span>
+    <input type="date" name="date_from" value="{{ filters.date_from }}" class="rounded border border-slate-300 px-2 py-1" />
+  </label>
+  <label class="flex flex-col">
+    <span class="text-xs text-slate-500 mb-1">To</span>
+    <input type="date" name="date_to" value="{{ filters.date_to }}" class="rounded border border-slate-300 px-2 py-1" />
+  </label>
+  <label class="flex flex-col">
+    <span class="text-xs text-slate-500 mb-1">Category</span>
+    <select name="category" class="rounded border border-slate-300 px-2 py-1">
+      <option value="">all</option>
+      {% for c in categories %}
+        <option value="{{ c }}" {% if filters.category == c %}selected{% endif %}>{{ c }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label class="flex flex-col">
+    <span class="text-xs text-slate-500 mb-1">Currency</span>
+    <input type="text" name="currency" maxlength="3" value="{{ filters.currency }}" class="rounded border border-slate-300 px-2 py-1 uppercase" />
+  </label>
+  <div class="flex items-end gap-2">
+    <button class="bg-slate-900 text-white text-sm px-4 py-1.5 rounded hover:bg-slate-700">Filter</button>
+    <a href="/portal/expenses" class="text-sm text-slate-500 hover:text-slate-900">Reset</a>
+  </div>
+</form>
+
+{% if totals %}
+  <div class="bg-white border border-slate-200 rounded p-4 mb-6 flex flex-wrap gap-x-8 gap-y-2">
+    {% for ccy, amount in totals.items() %}
+      <div>
+        <div class="text-xs uppercase text-slate-500">Total {{ ccy }}</div>
+        <div class="text-lg font-medium">{{ "%.2f"|format(amount) }}</div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<div class="bg-white border border-slate-200 rounded overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
+      <tr>
+        <th class="px-3 py-2 text-left">Trip</th>
+        <th class="px-3 py-2 text-left">#</th>
+        <th class="px-3 py-2 text-left">Date</th>
+        <th class="px-3 py-2 text-left">Vendor</th>
+        <th class="px-3 py-2 text-left">Category</th>
+        <th class="px-3 py-2 text-right">Total</th>
+        <th class="px-3 py-2 text-left">Cur</th>
+        <th class="px-3 py-2 text-left">Note</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for receipt, expense, trip in rows %}
+        <tr class="border-t border-slate-100">
+          <td class="px-3 py-2"><a href="/portal/trips/{{ trip.id }}" class="text-sky-700 hover:underline">{{ trip.name }}</a></td>
+          <td class="px-3 py-2">{{ receipt.seq }}</td>
+          <td class="px-3 py-2">{{ expense.date if expense and expense.date else "—" }}</td>
+          <td class="px-3 py-2">{{ expense.vendor if expense and expense.vendor else "—" }}</td>
+          <td class="px-3 py-2">{{ expense.category if expense and expense.category else "—" }}</td>
+          <td class="px-3 py-2 text-right">
+            {% if expense and expense.total is not none %}{{ "%.2f"|format(expense.total) }}{% else %}—{% endif %}
+          </td>
+          <td class="px-3 py-2">{{ expense.currency if expense and expense.currency else "—" }}</td>
+          <td class="px-3 py-2 text-slate-600">{{ receipt.note or "" }}</td>
+        </tr>
+      {% endfor %}
+      {% if not rows %}
+        <tr><td colspan="8" class="px-3 py-8 text-center text-slate-400">No expenses match these filters.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

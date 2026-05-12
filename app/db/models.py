@@ -62,8 +62,11 @@ class Receipt(Base):
         ForeignKey("trips.id", ondelete="CASCADE"), nullable=False, index=True
     )
     seq: Mapped[int] = mapped_column(Integer, nullable=False)
-    telegram_file_id: Mapped[str] = mapped_column(String(512), nullable=False)
-    s3_key: Mapped[str] = mapped_column(String(512), nullable=False)
+    telegram_file_id: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    s3_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    source: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="telegram", server_default="telegram"
+    )
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
     uploaded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

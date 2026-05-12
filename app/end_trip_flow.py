@@ -42,6 +42,7 @@ async def _list_pending_receipts(trip_id: int) -> list[_PendingReceipt]:
             .where(
                 Receipt.trip_id == trip_id,
                 Receipt.deleted_at.is_(None),
+                Receipt.s3_key.is_not(None),
                 Receipt.status.in_(["pending", "failed"]),
             )
             .order_by(Receipt.seq)
@@ -207,13 +208,15 @@ async def _gather_report_data(trip_id: int, image_dir: Path) -> ReportData:
         rows: list[ReportRow] = []
         downloads: list[tuple[Receipt, Path]] = []
         for receipt, expense in res.all():
-            local_path = image_dir / f"{receipt.seq:03d}.jpg"
-            downloads.append((receipt, local_path))
+            has_image = receipt.s3_key is not None
+            local_path = image_dir / f"{receipt.seq:03d}.jpg" if has_image else None
+            if has_image and local_path is not None:
+                downloads.append((receipt, local_path))
             rows.append(
                 ReportRow(
                     seq=receipt.seq,
-                    s3_key=receipt.s3_key,
-                    image_path=str(local_path),
+                    s3_key=receipt.s3_key or "",
+                    image_path=str(local_path) if local_path else None,
                     note=receipt.note,
                     vendor=expense.vendor if expense else None,
                     date=expense.date if expense else None,
